@@ -6,10 +6,10 @@ import java.nio.IntBuffer;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
-import android.media.FaceDetector.Face;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 
 public class DuckFinder {
 
@@ -37,7 +37,7 @@ public class DuckFinder {
 	}
 
 	public void setData(byte[] data, Camera camera) {
-		yuv = ByteBuffer.wrap(data.clone());
+		yuv = ByteBuffer.wrap(data);
 		width = camera.getParameters().getPreviewSize().width;
 		height = camera.getParameters().getPreviewSize().height;
 		rgb = IntBuffer.allocate(height * width);
@@ -57,11 +57,20 @@ public class DuckFinder {
 
 		@Override
 		public void run() {
+			long start = System.currentTimeMillis();
 			decodeYUV420SP(rgb.array(), yuv.array(), width, height);
+			long stop = System.currentTimeMillis();
+			Log.i("Duck", "decode took: " + (stop - start));
+			start = stop;
 			Bitmap image = Bitmap.createBitmap(rgb.array(), 480, 288,
 					Bitmap.Config.RGB_565);
-
+			stop = System.currentTimeMillis();
+			Log.i("Duck", "bitmap creatioin : " + (stop - start));
+			start = stop;
+			
 			FaceView face = new FaceView(context, image);
+			stop = System.currentTimeMillis();
+			Log.i("Duck", "Face Detection : " + (stop - start));
 
 			if (face.getDuckFace() != null) {
 				bundle.putFloat("centerx", face.getDuckFace().x);
@@ -120,5 +129,5 @@ public class DuckFinder {
 			}
 		}
 	}
-
+	
 }

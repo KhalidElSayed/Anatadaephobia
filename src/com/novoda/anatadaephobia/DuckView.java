@@ -4,10 +4,11 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.graphics.PixelFormat;
+import android.graphics.PorterDuff;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Messenger;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -61,6 +62,10 @@ public class DuckView extends SurfaceView implements Callback {
 	public Handler getHandler() {
 		return DuckHandler;
 	}
+	
+	public Messenger getMessenger() {
+		return new Messenger(DuckHandler);
+	}
 
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width,
@@ -106,6 +111,9 @@ public class DuckView extends SurfaceView implements Callback {
 
 		private void doDraw(Canvas c) {
 			if (isAnatadaephobia) {
+				// This clears the canvas. 
+				c.drawColor( 0, PorterDuff.Mode.CLEAR ); 
+				// Drawing the duck
 				c.drawBitmap(Bitmap.createScaledBitmap(duck, (int) radius * 4,
 						(int) radius * 4, false), x - radius / 2, y - radius
 						/ 2, null);

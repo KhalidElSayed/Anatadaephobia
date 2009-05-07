@@ -32,21 +32,14 @@ public class Landing extends Activity {
 		
 		
 		duck = new DuckView(this);
-		mPreview = new Preview(this, duck.getHandler());
+		mPreview = new Preview(this, duck);
+		
 		// FaceView view = new FaceView(this, sourceImage);
 		setContentView(duck);
 		addContentView(mPreview, new LayoutParams(LayoutParams.FILL_PARENT,
 				LayoutParams.FILL_PARENT));
 	}
 	
-	public Handler duckPhobia = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			Log.i("Duck", msg.getData().toString());
-			if (!msg.getData().isEmpty()) {
-			}
-		}
-	};
 }
 
 // ----------------------------------------------------------------------
@@ -56,14 +49,16 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback {
 	Camera mCamera;
 	private Context context;
 	private Handler mHandler;
+	
+	DuckView duck;
+	
+	MessageHandler queue;
 
-	Preview(Context context, Handler handler) {
+	Preview(Context context, DuckView duck) {
 		super(context);
-
+this.duck = duck;
 		this.context = context;
-
-		this.mHandler = handler;
-
+		
 		// Install a SurfaceHolder.Callback so we get notified when the
 		// underlying surface is created and destroyed.
 		mHolder = getHolder();
@@ -104,20 +99,22 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback {
 		parameters.setPreviewSize(w, h);
 		mCamera.setParameters(parameters);
 		mCamera.startPreview();
+		queue = new MessageHandler(context, w, h);
+		queue.view = duck;
 	}
 
 	private class Duckling implements PreviewCallback {
-		private DuckFinder finder;
+		//private DuckFinder finder;
 
 		public Duckling(Handler duckPhobia) {
-			finder = new DuckFinder(context, duckPhobia);
+			//finder = new DuckFinder(context, duckPhobia);
 		}
 
 		@Override
 		public void onPreviewFrame(byte[] data, Camera camera) {
-			if (!finder.lookupInProgress()) {
-				finder.setData(data, camera);
-				finder.startTheSearch();
+			if (queue.yuvProcessed) {
+				queue.copyYuvData(data);
+				queue.getHanlder().sendEmptyMessage(MessageHandler.PROCESSING_YUV_DATA);
 			}
 		}
 	}
