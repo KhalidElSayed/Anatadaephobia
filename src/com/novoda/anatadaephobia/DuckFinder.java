@@ -66,11 +66,17 @@ public class DuckFinder {
 			if (face.getDuckFace() != null) {
 				bundle.putFloat("centerx", face.getDuckFace().x);
 				bundle.putFloat("centery", face.getDuckFace().y);
-				bundle.putFloat("size", face.getDuckFaceSize());
+				bundle.putFloat("radius", face.getDuckFaceSize());
 			}
 
+			msg = duckPhobia.obtainMessage(2);
+//			bundle.putFloat("centerx", 50);
+//			bundle.putFloat("centery", 50);
+//			bundle.putFloat("radius", 10);
+			
 			msg.setData(bundle);
-			duckPhobia.dispatchMessage(msg);
+			if (duckPhobia != null)
+				duckPhobia.dispatchMessage(msg);
 
 			DuckFinder.this.setInProgress(false);
 		}

@@ -4,10 +4,6 @@ import java.io.IOException;
 
 import android.app.Activity;
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.hardware.Camera;
 import android.hardware.Camera.PreviewCallback;
 import android.os.Bundle;
@@ -16,35 +12,31 @@ import android.os.Message;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.View;
 import android.view.Window;
+import android.view.WindowManager;
 import android.view.ViewGroup.LayoutParams;
 
 public class Landing extends Activity {
 
 	protected static final String TAG = "Duck";
 	private Preview mPreview;
-	public Duck duck;
+	public DuckView duck;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
+		// No title
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
-		// Create our Preview view and set it as the content of our activity.
-
-		BitmapFactory.Options bfo = new BitmapFactory.Options();
-		bfo.inPreferredConfig = Bitmap.Config.RGB_565;
-
-		Bitmap sourceImage = BitmapFactory.decodeResource(getResources(),
-				R.drawable.test, bfo);
-
-		duck = new Duck(this);
-		mPreview = new Preview(this, duckPhobia);
+		// Full Screen
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		
+		
+		duck = new DuckView(this);
+		mPreview = new Preview(this, duck.getHandler());
 		// FaceView view = new FaceView(this, sourceImage);
-		setContentView(mPreview);
-		addContentView(duck, new LayoutParams(LayoutParams.WRAP_CONTENT,
-				LayoutParams.WRAP_CONTENT));
+		setContentView(duck);
+		addContentView(mPreview, new LayoutParams(LayoutParams.FILL_PARENT,
+				LayoutParams.FILL_PARENT));
 	}
 	
 	public Handler duckPhobia = new Handler() {
@@ -52,28 +44,9 @@ public class Landing extends Activity {
 		public void handleMessage(Message msg) {
 			Log.i("Duck", msg.getData().toString());
 			if (!msg.getData().isEmpty()) {
-				duck.x = msg.getData().getFloat("centerx");
-				duck.y = msg.getData().getFloat("centery");
 			}
 		}
 	};
-
-	private class Duck extends View {
-
-		public float x = 0;
-		public float y = 0;
-		public float size = 10;
-
-		public Duck(Context context) {
-			super(context);
-		}
-
-		@Override
-		protected void onDraw(Canvas canvas) {
-			canvas.drawCircle(x++, y++, size, new Paint());
-			Log.i("Duck", x + " " + y);
-		}
-	}
 }
 
 // ----------------------------------------------------------------------
@@ -116,6 +89,12 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback {
 		// important to release it when the activity is paused.
 		mCamera.stopPreview();
 		mCamera = null;
+		try {
+			Thread.sleep(1000L);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
@@ -141,19 +120,6 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback {
 				finder.startTheSearch();
 			}
 		}
-
-//		public Handler duckPhobia = new Handler() {
-//			@Override
-//			public void handleMessage(Message msg) {
-//				Log.i("Duck", msg.getData().toString());
-//				if (!msg.getData().isEmpty()) {
-////					Canvas can = Preview.this.getHolder().lockCanvas();
-////					can.drawCircle(msg.getData().getFloat("centerx"), msg
-////							.getData().getFloat("centery"), 10, new Paint());
-////					Preview.this.getHolder().unlockCanvasAndPost(can);
-//				}
-//			}
-//		};
 	}
 
 }
