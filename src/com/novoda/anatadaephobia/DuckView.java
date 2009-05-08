@@ -9,14 +9,15 @@ import android.graphics.PorterDuff;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Messenger;
-import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.SurfaceHolder.Callback;
 
 public class DuckView extends SurfaceView implements Callback {
 
+	// This thread is responsible for the continuous drawing against the canvas
 	private DuckPrinter mDuckThread;
+	
 	private SurfaceHolder mHolder;
 
 	// Position and size of the duck face if any, this is basically returned by
@@ -27,20 +28,19 @@ public class DuckView extends SurfaceView implements Callback {
 	// Just for the pain of writing this variable
 	private boolean isAnatadaephobia = false;
 
+	// The bitmap holding the duck head
 	private Bitmap duck;
-
+	
+	// This handler updates the position and size of the Duck Head
 	private Handler DuckHandler = new Handler() {
-
 		@Override
 		public void handleMessage(Message msg) {
-
 			if (msg.getData().containsKey("centerx")
 					&& msg.getData().containsKey("centery")) {
 				x = msg.getData().getFloat("centerx");
 				y = msg.getData().getFloat("centery");
 				radius = msg.getData().getFloat("radius");
 				isAnatadaephobia = true;
-				Log.i("Duck", msg.getData().toString() + " this is it");
 			}
 		}
 
@@ -51,10 +51,9 @@ public class DuckView extends SurfaceView implements Callback {
 		mHolder = getHolder();
 		mHolder.addCallback(this);
 		mHolder.setType(SurfaceHolder.SURFACE_TYPE_NORMAL);
-
 		duck = BitmapFactory.decodeResource(context.getResources(),
 				R.drawable.duck);
-
+		// Don't start it yet
 		mDuckThread = new DuckPrinter();
 	}
 
@@ -63,6 +62,8 @@ public class DuckView extends SurfaceView implements Callback {
 		return DuckHandler;
 	}
 	
+	
+	// This is the messenger so we can 'communicate' with this view
 	public Messenger getMessenger() {
 		return new Messenger(DuckHandler);
 	}

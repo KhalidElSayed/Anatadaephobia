@@ -8,6 +8,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.util.Log;
 
 public class MessageHandler {
@@ -16,7 +18,11 @@ public class MessageHandler {
 	public final static int PROCESSING_RGB_DATA = 2;
 	public final static int DISPLAY_FACE_DATA = 3;
 
-	public MessageHandler(Context context, int width, int height) {
+	public MessageHandler(Context context, int width, int height,
+			Messenger dontshootme) {
+
+		viewMessenger = dontshootme;
+
 		imgWidth = width;
 		imgHeight = height;
 		rgb = new int[width * height];
@@ -25,24 +31,37 @@ public class MessageHandler {
 		findFace.start();
 	}
 
+	// The 2 working threads
+	//
+	// First Thread:
+	// From an array of byte data in the YUV format (preview format from the
+	// camera) to an array of int in RGB format. This array is then transform
+	// into a bitmap - img.
 	private DecodeYUV decodeYUV = new DecodeYUV();
+	private Bitmap img;
+
+	// Second thread:
+	// Find one face from the above image.
 	private FindFace findFace = new FindFace();
 
-	public DuckView view;
-	
+	// This is a messenger. We can send messages to the DuckView in order to
+	// display the face when found.
+	private Messenger viewMessenger;
+
+	// This boolean tells us if we have processed the YUV data. If true, we get
+	// a new array from the camera preview application using copyYuvData
 	public boolean yuvProcessed = true;
 
 	private int[] rgb;
 	private byte[] yuv;
 
 	// RGB image against which we will find the face
-	private Bitmap img;
 	private int imgWidth;
 	private int imgHeight;
 
 	// The final face detected
 	private FaceDetector.Face face;
-	
+
 	private Handler queue = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
@@ -54,9 +73,13 @@ public class MessageHandler {
 				findFace.mHandler.sendEmptyMessage(0);
 				break;
 			case DISPLAY_FACE_DATA:
-				Message mg = view.getHandler().obtainMessage();
-				mg.setData(bundle);
-				view.getHandler().sendMessage(mg);
+				Message duckFace = new Message();
+				duckFace.setData(bundle);
+				try {
+					viewMessenger.send(duckFace);
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
 				break;
 			default:
 				break;
@@ -64,10 +87,11 @@ public class MessageHandler {
 		}
 	};
 
-	public Handler getHanlder() {
+	// So we can have other thread communicating here.
+	public Handler getHandler() {
 		return queue;
 	}
-
+	
 	// This Thread decode the YUV into a RGB int buffer
 	private class DecodeYUV extends Thread {
 		public Handler mHandler;
@@ -78,7 +102,8 @@ public class MessageHandler {
 			mHandler = new Handler() {
 				public void handleMessage(Message msg) {
 					yuvProcessed = false;
-					Log.i("Duck", "begin decoding at" + System.currentTimeMillis());
+					Log.i("Duck", "begin decoding at"
+							+ System.currentTimeMillis());
 					decodeYUV420SP(rgb, yuv, imgWidth, imgHeight);
 					img = Bitmap.createBitmap(rgb, imgWidth, imgHeight,
 							Bitmap.Config.RGB_565);
@@ -89,7 +114,9 @@ public class MessageHandler {
 			Looper.loop();
 		}
 	};
+
 	Bundle bundle = new Bundle();
+
 	/*
 	 * This thread starts when we have generated a RGB image from the YUV
 	 * preview image.
@@ -122,7 +149,8 @@ public class MessageHandler {
 						bundle.putFloat("radius", face.eyesDistance());
 						msg.setData(bundle);
 					}
-					Log.i("Duck", "find a face with: " +face + " in " + System.currentTimeMillis());
+					Log.i("Duck", "find a face with: " + face + " in "
+							+ System.currentTimeMillis());
 					queue.sendEmptyMessage(DISPLAY_FACE_DATA);
 				}
 			};
@@ -130,10 +158,13 @@ public class MessageHandler {
 		}
 	};
 
+	// gathering a local copy of the preview frame
 	public void copyYuvData(byte[] data) {
 		yuv = data.clone();
 	}
 
+	// Actual algorythm to decode yuv data taken from:
+	// http://code.google.com/p/android/issues/detail?id=823#c4
 	static public void decodeYUV420SP(int[] rgb, byte[] yuv420sp, int width,
 			int height) {
 		final int frameSize = width * height;

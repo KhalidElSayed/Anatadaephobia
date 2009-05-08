@@ -7,9 +7,6 @@ import android.content.Context;
 import android.hardware.Camera;
 import android.hardware.Camera.PreviewCallback;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
-import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.Window;
@@ -29,36 +26,33 @@ public class Landing extends Activity {
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		// Full Screen
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-		
-		
+
 		duck = new DuckView(this);
 		mPreview = new Preview(this, duck);
-		
+
 		// FaceView view = new FaceView(this, sourceImage);
 		setContentView(duck);
 		addContentView(mPreview, new LayoutParams(LayoutParams.FILL_PARENT,
 				LayoutParams.FILL_PARENT));
 	}
-	
+
 }
 
 // ----------------------------------------------------------------------
-
-class Preview extends SurfaceView implements SurfaceHolder.Callback {
+class Preview extends SurfaceView implements SurfaceHolder.Callback,
+		PreviewCallback {
 	SurfaceHolder mHolder;
 	Camera mCamera;
 	private Context context;
-	private Handler mHandler;
-	
+
 	DuckView duck;
-	
-	MessageHandler queue;
+	private MessageHandler queue;
 
 	Preview(Context context, DuckView duck) {
 		super(context);
-this.duck = duck;
+		this.duck = duck;
 		this.context = context;
-		
+
 		// Install a SurfaceHolder.Callback so we get notified when the
 		// underlying surface is created and destroyed.
 		mHolder = getHolder();
@@ -72,7 +66,7 @@ this.duck = duck;
 		mCamera = Camera.open();
 		try {
 			mCamera.setPreviewDisplay(holder);
-			mCamera.setPreviewCallback(new Duckling(mHandler));
+			mCamera.setPreviewCallback(this);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -99,23 +93,15 @@ this.duck = duck;
 		parameters.setPreviewSize(w, h);
 		mCamera.setParameters(parameters);
 		mCamera.startPreview();
-		queue = new MessageHandler(context, w, h);
-		queue.view = duck;
+		queue = new MessageHandler(context, w, h, duck.getMessenger());
 	}
 
-	private class Duckling implements PreviewCallback {
-		//private DuckFinder finder;
-
-		public Duckling(Handler duckPhobia) {
-			//finder = new DuckFinder(context, duckPhobia);
-		}
-
-		@Override
-		public void onPreviewFrame(byte[] data, Camera camera) {
-			if (queue.yuvProcessed) {
-				queue.copyYuvData(data);
-				queue.getHanlder().sendEmptyMessage(MessageHandler.PROCESSING_YUV_DATA);
-			}
+	@Override
+	public void onPreviewFrame(byte[] data, Camera camera) {
+		if (queue.yuvProcessed) {
+			queue.copyYuvData(data);
+			queue.getHandler().sendEmptyMessage(
+					MessageHandler.PROCESSING_YUV_DATA);
 		}
 	}
 
