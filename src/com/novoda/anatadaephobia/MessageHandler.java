@@ -147,7 +147,7 @@ public class MessageHandler {
 						bundle.putFloat("centerx", po.x);
 						bundle.putFloat("centery", po.y);
 						bundle.putFloat("radius", face.eyesDistance());
-						msg.setData(bundle);
+						//msg.setData(bundle);
 					}
 					Log.i("Duck", "find a face with: " + face + " in "
 							+ System.currentTimeMillis());
@@ -163,7 +163,7 @@ public class MessageHandler {
 		yuv = data.clone();
 	}
 
-	// Actual algorythm to decode yuv data taken from:
+	// Actual algorithm to decode YUV data taken from:
 	// http://code.google.com/p/android/issues/detail?id=823#c4
 	static public void decodeYUV420SP(int[] rgb, byte[] yuv420sp, int width,
 			int height) {

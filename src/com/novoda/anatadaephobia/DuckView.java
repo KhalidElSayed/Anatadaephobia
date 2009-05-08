@@ -113,11 +113,13 @@ public class DuckView extends SurfaceView implements Callback {
 		private void doDraw(Canvas c) {
 			if (isAnatadaephobia) {
 				// This clears the canvas. 
-				c.drawColor( 0, PorterDuff.Mode.CLEAR ); 
+				c.drawColor( 0, PorterDuff.Mode.CLEAR );
+				// Scale the bitmap
+				Bitmap d = Bitmap.createScaledBitmap(duck, (int) radius * 3,
+						(int) radius * 3, false);
 				// Drawing the duck
-				c.drawBitmap(Bitmap.createScaledBitmap(duck, (int) radius * 4,
-						(int) radius * 4, false), x - radius / 2, y - radius
-						/ 2, null);
+				c.drawBitmap(d, x - d.getWidth()/2, y - d.getHeight()/2, null);
+				
 			}
 		}
 
